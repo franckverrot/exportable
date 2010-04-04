@@ -1,49 +1,82 @@
-= acts_as_exportable
+# acts_as_exportable
 
 * http://github.com/cesario/exportable
 
-== DESCRIPTION:
+## Description / Usage:
 
-exportable
+exportable is an easy way to export a collection using a predefined format.
+Using an ORM (say ActiveRecord), one would do:
+  # models/banana.rb
+  class Banana
+    # Attributes :size, :color
 
-== FEATURES/PROBLEMS:
+    # Export class method
+    # Banana.export / Banana.export([1, 2, 4, 8])
+    def self.export_as_csv(ids = nil)
+      objs = ids.nil? where("id in (?)",ids) : all
+      objs.each do |obj|
+        obj.export_as_csv
+      end
+    end
 
-* None yet :)
+    # Export instance method
+    def export_as_csv
+      # your logic here
+    end
+  end
 
-== SYNOPSIS:
+  # controllers/banana_controller.rb
+  ...
+  Banana.export_as_csv([1,2,4,8])
+  ...
 
-  Tired of repeating the same lines for exporting data? exportable is for you.
+... and this for each and every class, and for each and every export format.
 
-== REQUIREMENTS:
+With exportable, you will be handling pure Ruby objects and be able to share
+the export format across multiple classes without any probme.
 
-* spreadsheet
-* fastcsv
+  # lib/simple_export.rb
+  require 'exportable'
+  module SimpleExport
+    include Exportable
+    
+    exportable :as => :simple_export, :using => :csv do
+      header    :column_names
+      column_separator ';'
+      row_separator '\n'
 
-== INSTALL:
+      columns :size  => "Size",
+              :color  => "Color"
+      end
+    end
+  end
+
+  # models/banana.rb
+  # Model left clean
+  class Banana
+    # Same attributes :size, :color
+  end
+
+  # controllers/some_controller.rb
+  ...
+  fruits = [ banana1, banana2, some_other_fruit_responding_to_size_and_color ]
+  fruits.export(:simple_export)
+  fruits.simple_export
+
+The :as argument becomes an instance method of any Array object. You could either use myArray.export(:export_name_provided) or just myArray.export_name_provided
+
+## Known issue
+
+* Early release: Not fully featured yet!
+* CSV extension: Internally, a Hash is used to store the list of columns to export.
+With Ruby 1.8, the Hashes are not sorted, so you will have to rely on the header record which states the actual attribute order. With 1.9 and sorted Hashes, the order is respected.
+
+## Requirements:
+
+* Ruby 1.8.*
+* None yet
+
+## INSTALL:
 
 * gem install exportable
 
-== LICENSE:
-
-(The MIT License)
-
-Copyright (c) 2010 Franck Verrot
-
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-'Software'), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
